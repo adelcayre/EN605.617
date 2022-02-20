@@ -77,12 +77,12 @@ __global__ void ConditionalPrepped(int* Arr_A_o, int* Arr_B_o, int* Arr_C_o, int
 void pinnedMemory(char op[], int blocks, int threads, int blockSize){
      
     //declare GPU pointers
-    int *dev_a, *dev_b, *dev_c;
+    int *a, *b, *c, *dev_a, *dev_b, *dev_c;
     
-    //HOST memory allocation
-    a = (int*)malloc(N*sizeof(int));
-    b = (int*)malloc(N*sizeof(int));
-    c = (int*)malloc(N*sizeof(int));
+    //HOST pinned memory allocation
+    cudaMallocHost((int **)&a, N*sizeof(int));
+    cudaMallocHost((int **)&b, N*sizeof(int));
+    cudaMallocHost((int **)&c, N*sizeof(int));
     
     //GPU memory allocation
     cudaMalloc((void**)&dev_a, N * sizeof(int));
@@ -128,7 +128,7 @@ void pinnedMemory(char op[], int blocks, int threads, int blockSize){
         t=clock();
         Mod<<<blocks, threads>>>(dev_a, dev_b, dev_c);
         t=clock()-t;
-    
+    }
     
     
     //copy result back to host
@@ -145,7 +145,7 @@ void pinnedMemory(char op[], int blocks, int threads, int blockSize){
     
     
     double elapsedTime = ((double)t)/CLOCKS_PER_SEC;
-    printf("Processed %d %s operations with %d threads and %d blocks (%d threads per block) in %f seconds \n", N, argv[1], threads, blocks, blockSize, elapsedTime);
+    printf("Processed %d %s operations with %d threads and %d blocks (%d threads per block) in %f seconds using pinned memmory \n", N, op, threads, blocks, blockSize, elapsedTime);
    
     
     //free allocated memory
@@ -162,17 +162,19 @@ void pinnedMemory(char op[], int blocks, int threads, int blockSize){
 void pageableMemory(char op[], int blocks, int threads, int blockSize){
      
     //declare GPU pointers
-    int *dev_a, *dev_b, *dev_c;
+    int *a, *b, *c, *dev_a, *dev_b, *dev_c;
     
-    //HOST memory allocation
+    printf("got here");
+    //HOST pageable memory allocation
     a = (int*)malloc(N*sizeof(int));
     b = (int*)malloc(N*sizeof(int));
     c = (int*)malloc(N*sizeof(int));
     
+    
     //GPU memory allocation
-    cudaMalloc((void**)&dev_a, N * sizeof(int));
-    cudaMalloc((void**)&dev_b, N * sizeof(int));
-    cudaMalloc((void**)&dev_c, N * sizeof(int));
+    cudaMalloc((int**)&dev_a, N * sizeof(int));
+    cudaMalloc((int**)&dev_b, N * sizeof(int));
+    cudaMalloc((int**)&dev_c, N * sizeof(int));
     
     //populate host arrays
     srand ( time(NULL) );
@@ -213,7 +215,7 @@ void pageableMemory(char op[], int blocks, int threads, int blockSize){
         t=clock();
         Mod<<<blocks, threads>>>(dev_a, dev_b, dev_c);
         t=clock()-t;
-    
+    }
     
     
     //copy result back to host
@@ -230,7 +232,7 @@ void pageableMemory(char op[], int blocks, int threads, int blockSize){
     
     
     double elapsedTime = ((double)t)/CLOCKS_PER_SEC;
-    printf("Processed %d %s operations with %d threads and %d blocks (%d threads per block) in %f seconds \n", N, argv[1], threads, blocks, blockSize, elapsedTime);
+    printf("Processed %d %s operations with %d threads and %d blocks (%d threads per block) in %f seconds using pageable memory \n", N, op, threads, blocks, blockSize, elapsedTime);
    
     
     //free allocated memory
@@ -246,16 +248,16 @@ void pageableMemory(char op[], int blocks, int threads, int blockSize){
     
 
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv){
 	// read command line arguments
-	int totalThreads = (1 << 20);
+    printf("got here");
+	int totalThreads = 1 << 20;
 	int blockSize = 256;
 	
-	if (argc >= 2) {
+	if (argc >= 3) {
 		totalThreads = atoi(argv[2]);
 	}
-	if (argc >= 3) {
+	if (argc >= 4) {
 		blockSize = atoi(argv[3]);
 	}
 
@@ -270,17 +272,19 @@ int main(int argc, char** argv)
 		printf("The total number of threads will be rounded up to %d\n", totalThreads);
     
    
-        
-        
-        
+        }
+    
+    pageableMemory(argv[1], numBlocks, totalThreads, blockSize);
+    pinnedMemory(argv[1], numBlocks, totalThreads, blockSize);
+    
     
     return 0;
     
-	}
+}
     
     
     
     
     
 
-}
+
