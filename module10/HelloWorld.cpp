@@ -253,14 +253,34 @@ int main(int argc, char** argv)
 
     // Create OpenCL program from HelloWorld.cl kernel source
     program = CreateProgram(context, device, "HelloWorld.cl");
+    
+    // Create OpenCL kernel
+    //select kernel to launch
+    if(strcmp(argv[1], "add")==0){
+        kernel = clCreateKernel(program, "add", NULL);
+
+    }
+    
+    else if(strcmp(argv[1], "subtract")==0){
+      thrust::transform(A_dev.begin(), A_dev.end(), B_dev.begin(), C_dev.begin(), thrust::minus<int>());        
+    }
+    
+    else if(strcmp(argv[1], "multiply")==0){
+      thrust::transform(A_dev.begin(), A_dev.end(), B_dev.begin(), C_dev.begin(), thrust::multiplies<int>());                
+    }
+    
+    else if(strcmp(argv[1], "mod")==0){
+      thrust::transform(A_dev.begin(), A_dev.end(), B_dev.begin(), C_dev.begin(), thrust::modulus<int>());                
+    }
     if (program == NULL)
     {
         Cleanup(context, commandQueue, program, kernel, memObjects);
         return 1;
     }
 
-    // Create OpenCL kernel
-    kernel = clCreateKernel(program, "hello_kernel", NULL);
+    
+    
+
     if (kernel == NULL)
     {
         std::cerr << "Failed to create kernel" << std::endl;
